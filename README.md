@@ -5,6 +5,8 @@ Turn a Raspberry Pi into serial data logger &amp; remote access client for
 the unit deployed at our
 [Urbanova Air Quality Refererence Site](https://github.com/wsular/urbanova-aqnet-ref-site).
 
+* [Hardware setup](docs/setup.md)
+
 ### License
 
 This work licensed under [The MIT License](http://opensource.org/licenses/mit-license.html).
