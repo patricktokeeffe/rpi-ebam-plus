@@ -1,5 +1,9 @@
-# rpi-ebam-plus
-Turn a Raspberry Pi into serial data logger &amp; remote access client for MetOne Instruments E-BAM PLUS
+# E-BAM PLUS Raspberry Pi Interface
+
+Turn a Raspberry Pi into serial data logger &amp; remote access client for
+[MetOne Instruments](http://metone.com) E-BAM PLUS. We put this together for
+the unit deployed at our
+[Urbanova Air Quality Refererence Site](https://github.com/wsular/urbanova-aqnet-ref-site).
 
 ### License
 
