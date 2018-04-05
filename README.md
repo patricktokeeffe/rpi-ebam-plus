@@ -6,6 +6,7 @@ the unit deployed at our
 [Urbanova Air Quality Refererence Site](https://github.com/wsular/urbanova-aqnet-ref-site).
 
 * [Hardware setup](docs/setup.md)
+* [Installation](docs/install.md)
 
 ### License
 
