@@ -42,9 +42,18 @@ Assuming this user is named `sally`:
 
 #### Base Packages
 
-Install necessary packages and useful utilities (`sudo apt-get install ...`)
+First, do a complete system update: `sudo apt-get update && sudo apt-get dist-upgrade -y`
+
+Next, install necessary packages and useful utilities (`sudo apt-get install ...`)
 * `git`
 * `tmux`
+
+#### Shell Access
+
+Finally, add some public SSH keys to your new administrative user account and
+disable password login.
+* See <https://www.digitalocean.com/community/tutorials/how-to-set-up-ssh-keys--2>
+
 
 ### Off Button Support
 
