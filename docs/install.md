@@ -37,8 +37,9 @@ Assuming this user is named `sally`:
 3. Grant new user admin rights (`sudo visudo`)
 	* Duplicate this line: `root		ALL=(ALL:ALL) ALL`
 	* Update copied line to: `sally	ALL=NOPASSWD: ALL`
-4. Log out; log in as the new user
-5. Delete old user (`sudo userdel -r pi`)
+4. Grant new user serial port access (`sudo usermod -a -G dialout sally`)
+5. Log out; log in as the new user
+6. Delete old user (`sudo userdel -r pi`)
 
 #### Base Packages
 
@@ -47,6 +48,14 @@ First, do a complete system update: `sudo apt-get update && sudo apt-get dist-up
 Next, install necessary packages and useful utilities (`sudo apt-get install ...`)
 * `git`
 * `tmux`
+* `minicom`
+
+Then do a little bit of config to make serial port usage easier (`sudo minicom -s`):
+* Serial port setup
+    * Serial Device: `/dev/ttyUSB0`
+    * Hardware flow control: No
+* Save setup as dfl
+
 
 #### Shell Access
 
@@ -87,4 +96,9 @@ To monitor overall computer performance, install
     * Uncomment final config block for statistics
     * Comment out existing status-content-line entries in third config block
       and uncomment the "Ethernet sent..." line
+
+
+### Development Setup
+
+
 
