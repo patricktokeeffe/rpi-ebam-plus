@@ -50,9 +50,18 @@ Next, install necessary packages and useful utilities (`sudo apt-get install ...
 
 #### Shell Access
 
-Finally, add some public SSH keys to your new administrative user account and
+Add some public SSH keys to your new administrative user account and
 disable password login.
 * See <https://www.digitalocean.com/community/tutorials/how-to-set-up-ssh-keys--2>
+
+#### Automatic Updates
+
+Since this device will be left running unattended, install packages to support
+automatic updates.
+```
+$ sudo apt-get update
+$ sudo apt-get install unattended-upgrades -y
+```
 
 
 ### Off Button Support
