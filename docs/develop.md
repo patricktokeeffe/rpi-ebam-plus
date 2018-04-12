@@ -12,3 +12,11 @@ Notes to get you started:
 * you can get direct serial port access using `minicom`
 
 
+A test script was created to probe for the EBAM's response to
+serial port queries. Should make verifying hardware setup
+easier (basically, answer the question: do we need a null
+modem adapter?)
+```
+python src/test_ebam_comms.py
+```
+
