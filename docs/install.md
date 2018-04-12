@@ -37,8 +37,9 @@ Assuming this user is named `sally`:
 3. Grant new user admin rights (`sudo visudo`)
 	* Duplicate this line: `root		ALL=(ALL:ALL) ALL`
 	* Update copied line to: `sally	ALL=NOPASSWD: ALL`
-4. Log out; log in as the new user
-5. Delete old user (`sudo userdel -r pi`)
+4. Grant new user serial port access (`sudo usermod -a -G dialout sally`)
+5. Log out; log in as the new user
+6. Delete old user (`sudo userdel -r pi`)
 
 #### Base Packages
 
@@ -47,12 +48,29 @@ First, do a complete system update: `sudo apt-get update && sudo apt-get dist-up
 Next, install necessary packages and useful utilities (`sudo apt-get install ...`)
 * `git`
 * `tmux`
+* `minicom`
+
+Then do a little bit of config to make serial port usage easier (`sudo minicom -s`):
+* Serial port setup
+    * Serial Device: `/dev/ttyUSB0`
+    * Hardware flow control: No
+* Save setup as dfl
+
 
 #### Shell Access
 
-Finally, add some public SSH keys to your new administrative user account and
+Add some public SSH keys to your new administrative user account and
 disable password login.
 * See <https://www.digitalocean.com/community/tutorials/how-to-set-up-ssh-keys--2>
+
+#### Automatic Updates
+
+Since this device will be left running unattended, install packages to support
+automatic updates.
+```
+$ sudo apt-get update
+$ sudo apt-get install unattended-upgrades -y
+```
 
 
 ### Off Button Support
@@ -78,4 +96,15 @@ To monitor overall computer performance, install
     * Uncomment final config block for statistics
     * Comment out existing status-content-line entries in third config block
       and uncomment the "Ethernet sent..." line
+
+
+### Development Setup
+
+1. Install the python package manager (`sudo apt-get install python-pip -y`)
+2. Then re-install using itself for possible updates (`sudo pip install pip`)
+3. Finally, install required packages:
+```
+sudo pip install python-dev pyserial
+```
+
 
