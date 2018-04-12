@@ -7,6 +7,7 @@ the unit deployed at our
 
 * [Hardware assembly](docs/build.md)
 * [Software setup](docs/install.md)
+* [Developer notes](docs/develop.md)
 
 ### License
 

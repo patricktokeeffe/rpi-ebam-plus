@@ -100,5 +100,11 @@ To monitor overall computer performance, install
 
 ### Development Setup
 
+1. Install the python package manager (`sudo apt-get install python-pip -y`)
+2. Then re-install using itself for possible updates (`sudo pip install pip`)
+3. Finally, install required packages:
+```
+sudo pip install python-dev pyserial
+```
 
 
