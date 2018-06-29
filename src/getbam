@@ -24,11 +24,15 @@ except OSError:
 #name the file based on today's date
 fn=logdir+'/EBAM_' + now.strftime ('%Y%m%d')+'.csv'
 
+columns = 'Time,ConcRT(ug/m3),ConcHR(ug/m3),Flow(lpm),WS(m/s),WD(Deg),AT(C),RH(%),BP(mmHg),FT(C),FRH(%),BV(V),PM,Status'
+# extract name only portion of column naes for writing to `/run/...` files, for RPImonitor and Itron cloud integration
+runtime_names = [name.split('(')[0] for name in columns.split(',')]
+
 #at hour 0 start a new file with a new header, at other hours just open the existing file
 #also find the time of the previous entry saved to use for checking errors (for hour 0 this is yesterday's file)
 if now.hour==0:
     f=open(fn,'w+')
-    f.write('Time,ConcRT(ug/m3),ConcHR(ug/m3),Flow(lpm),WS(m/s),WD(Deg),AT(C),RH(%),BP(mmHg),FT(C),FRH(%),BV(V),PM,Status\n')
+    f.write(columns+'\n')
     yesterdayfn=logdir+'/EBAM_' + yesterday.strftime ('%Y%m%d')+'.csv'
     df=pd.read_csv(yesterdayfn, parse_dates=True, index_col='Time')
     last_time=df.index[-1]
@@ -43,9 +47,19 @@ else:
 #use getEbamLastHour get have the pi make a serial port connection to the EBAM, get the most recent data, and return one line with the most recent hour
 hourline=getEbamLastHour()
 
+# write to in-memory file for consumers (RPi-Monitor, Itron..)
+for (name, val) in zip(runtime_names, hourline.split(',')):
+    try:
+        val = float(val) # ie write 0.0 instead of 00000 or 24.1 instead of +024.1
+    except ValueError:
+        pass
+    with open('/run/ebam/'+name, 'w') as runfile:
+        runfile.write(str(val))
+
 #find the time of the current entry to use for checking errors
 dfnew=pd.read_csv('/tmp/ebam.csv', parse_dates=True, index_col='Time')
 new_time=dfnew.index[-1]
+
 
 #write the data from the last hour, checking that the current time is different from the last time saved and is one hour later
 if new_time!=last_time:

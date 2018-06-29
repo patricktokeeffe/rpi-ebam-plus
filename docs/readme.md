@@ -4,4 +4,5 @@
 
 * [Hardware assembly](build.md)
 * [Software setup](install.md)
+* [Developer notes](develop.md)
 

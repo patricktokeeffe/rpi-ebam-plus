@@ -110,3 +110,14 @@ sudo pip install python-dev pyserial pandas
 > able to load them - therefore, do not omit `sudo` when calling `pip`.*
 
 
+### Data Acquisition Script
+
+The script needs to be run each hour; it is not a continuous process at this time.
+Just use `sudo crontab -e` (or your favorite method) to run 5 mins past the hour:
+```
+5 * * * * /path/to/the/repo/src/getbam
+```
+
+
+
+
