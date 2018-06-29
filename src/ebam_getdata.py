@@ -44,7 +44,7 @@ def  getEbamLastHour():
             hourline=res.split("\n",8)[7]
             #print('hourline is:')
             #print(hourline)
-            f=open("temp.csv", "w")
+            f=open("/tmp/ebam.csv", "w")
             f.write('Time,ConcRT(ug/m3),ConcHR(ug/m3),Flow(lpm),WS(m/s),WD(Deg),AT(C),RH(%),BP(mmHg),FT(C),FRH(%),BV(V),PM,Status\n')
             f.write(hourline)
             f.close()
