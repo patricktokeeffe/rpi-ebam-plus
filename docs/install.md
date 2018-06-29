@@ -104,7 +104,20 @@ To monitor overall computer performance, install
 2. Then re-install using itself for possible updates (`sudo pip install pip`)
 3. Finally, install required packages:
 ```
-sudo pip install python-dev pyserial
+sudo pip install python-dev pyserial pandas
 ```
+> *Packages must be installed system-wide or the service executable will not be
+> able to load them - therefore, do not omit `sudo` when calling `pip`.*
+
+
+### Data Acquisition Script
+
+The script needs to be run each hour; it is not a continuous process at this time.
+Just use `sudo crontab -e` (or your favorite method) to run 5 mins past the hour:
+```
+5 * * * * /path/to/the/repo/src/getbam
+```
+
+
 
 
