@@ -72,6 +72,56 @@ $ sudo apt-get update
 $ sudo apt-get install unattended-upgrades -y
 ```
 
+#### Watchdog Timer
+
+Enable automatic rebooting if the hardware hangs somehow.
+First enable hardware support:
+```
+sudo nano /boot/config.txt
+```
+```diff
+ ...
++##watchdog
++dtparam=watchdog=on
+```
+```
+sudo reboot
+```
+
+Then install *watchdog* and fix its broken *systemd* service file:
+```
+sudo apt install watchdog -y
+sudo bash -c "cp /lib/systemd/system/watchdog.service /etc/systemd/system/
+> echo 'WantedBy=multi-user.target' >> /etc/systemd/system/watchdog.service"
+```
+
+Update the configuration file:
+```
+sudo nano /etc/watchdog.conf
+```
+```diff
+ ...
+-#max-load-1       = 24
++max-load-1       = 24
+
+ ...
+-#watchdog-device        = /dev/watchdog
++watchdog-device        = /dev/watchdog
++
++watchdog-timeout = 10
+```
+
+Finally enable the service:
+```
+sudo systemctl enable watchdog
+sudo systemctl start watchdog
+```
+
+And optionally test with null pointer dereference:
+```
+echo c > /proc/sysrq-trigger
+```
+
 
 ### Off Button Support
 
