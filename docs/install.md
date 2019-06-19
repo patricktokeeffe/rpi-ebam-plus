@@ -180,14 +180,20 @@ server {
 
     server_name _;
 
-    # temporarily redirect default traffic to rpimonitor
     location / {
-        #try_files $uri $uri/ =404;
-        return 302 http://$host/status/;
+        try_files $uri $uri/ =404;
     }
 
+    # HINT with trailing slash to get redirect from without
     location /status/ {
         proxy_pass http://localhost:8888;
+    }
+
+    # HINT withOUT trailing slash to get redirect from without
+    location /data {
+        disable_symlinks off;
+        alias /var/log/ebam/;
+        autoindex on;
     }
 }
 ```
