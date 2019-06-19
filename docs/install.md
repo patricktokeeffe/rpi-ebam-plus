@@ -147,6 +147,57 @@ To monitor overall computer performance, install
     * Comment out existing status-content-line entries in third config block
       and uncomment the "Ethernet sent..." line
 
+### Nginx
+
+This web server will allow users to reach RPi-Monitor, a data website, and
+basic log file browsing via the same website.
+
+> *Note we are not using secure HTTP because this device does not have a DNS entry
+> and self-signed certificates offer no real advantage (i.e. our server is read-only).
+
+Refer to the *Usages* > *Authentication and secure access* section of the
+documentation (<https://xavierberger.github.io/RPi-Monitor-docs/34_autentication.html>)
+for examples.
+
+Install *nginx*, disable the default site and create a new one:
+```
+sudo apt install nginx -y
+```
+```
+sudo rm /etc/nginx/sites-enable/default
+sudo nano /etc/nginx/sites-available/ebam
+```
+
+This is a combination of the default site + docs example:
+```
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+
+    root /var/www/html;
+
+    index index.html index.htm;
+
+    server_name _;
+
+    # temporarily redirect default traffic to rpimonitor
+    location / {
+        #try_files $uri $uri/ =404;
+        return 302 http://$host/status/;
+    }
+
+    location /status/ {
+        proxy_pass http://localhost:8888;
+    }
+}
+```
+
+Enable the new site and restart *nginx*:
+```
+sudo ln -s /etc/nginx/sites-available/ebam /etc/nginx/sites-enabled/ebam
+sudo systemctl restart nginx
+```
+
 
 ### Development Setup
 
