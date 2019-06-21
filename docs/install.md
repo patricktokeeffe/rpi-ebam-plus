@@ -1,4 +1,3 @@
-
 # Software Installation
 
 ## E-BAM PLUS Raspberry Pi Interface
@@ -148,75 +147,94 @@ To monitor overall computer performance, install
       and uncomment the "Ethernet sent..." line
 
 
-### Data Share Directory
+### Data Access Setup
 
-Create a new public directory that will be served via http/ftp/samba
-and populate with symlinks:
+#### FTP
+
+Install an FTP server for universal copy-paste access
+(default configuration works okay):
 ```
-sudo mkdir -m 1777 /share
-```
-```
-sudo ln -s /var/run/ebam /var/log/ebam/latest
-sudo ln -s /var/log/ebam /share/ebam
+sudo apt install vsftpd -y
 ```
 
-By serving an `ebam` directory, we can easily expose other logfile
-sets later on (e.g. NTP stats or some environmental sensors).
+Create new user *ebam* for FTP login (only, no shell access):
+```
+sudo adduser -s /bin/false ebam
+sudo nano /etc/shells
+```
+```diff
+ ...
++/bin/false
+```
+
+Create new directory to hold shared folders (& reset ownership):
+```
+sudo mkdir /home/ebam/data
+sudo chown -R ebam:ebam /home/ebam/data
+```
+
+Retrict ftp login to *ebam* by blacklisting other users (ex: *pi*):
+```
+sudo nano /etc/ftpusers
+```
+```diff
+ ...
++pi
+```
+
+> **Notes on *vsftpd***
+>
+> * trying to setup anon browse access
+>     * throws writeable root chroot errors
+>     * anon cannot follow symlinks
+> * seting up user based access
+>     * chrome does not permit login FTP browse
+>     * chroot'ed users cannot follow symlinks
+>     * chroot'ed users must have read-only home dir
+>     * non-chroot users can browse/get lost in file system
+> * using bind vs symlinks
+>     * nobody can see into nested `mount --bind` folders
+>     * the `mount --bind` command isn't persistant anyway
+>     * windows explorer FTP cannot symlink or bind (sometimes?)
+>     * <https://serverfault.com/questions/972337/vsftp-accessing-nested-mounted-folders>
 
 
-### SAMBA
+#### Data Share Folder
 
-Install the *samba* package so Windows clients recognize the hostname, and
-users can anonymously browse from local network clients.
+Symlink the runtime folder with latest values into the EBAM log
+directory, then symlink the EBAM log directory into the FTP homedir:
+```
+sudo ln -s /run/ebam /var/log/ebam/latest
+sudo ln -s /var/log/ebam /home/ebam/data
+```
+
+This folder (`/home/ebam/data`) will be the base directory (`/`) 
+for HTTP/S browsing (`/data/`) and the SAMBA share ("Data") (see below).
+Since the FTP user is not chroot'ed, make another symlink to provide
+the same short path structure (i.e. `ftp://<hostname>/data/ebam/...`):
+```
+sudo ln -s /home/ebam/data /data
+```
+
+
+#### Windows Shares
+
+Install the *samba* package so Windows clients recognize the hostname and
+browse the computer anonymously from the local network.
 ```
 sudo apt install samba -y
 ```
+
+Then copy the provided configuration, which will create a public, read-only
+share named "data" which maps to `/home/ebam/data`:
 ```
+sudo mv /etc/samba/smb.conf /etc/samba/smb.conf.bak
 sudo cp src/etc/samba/smb.conf /etc/samba/
+sudo systemctl restart smbd
 ```
 
-> **This isn't working for windows clients yet**
 
-Symptoms:
-* can see computer in network list
-* can open computer and see share
-* sometimes can even open share and see "ebam" folder
-* at no point can ebam folder be opened:
-    * "You do not have permission to access {shared folder name}"
-* frequently get (the same?) errors opening share home folder too
-
-Tab trail:
-* <https://github.com/wsular/rpi-python-iaq-sensor/blob/stash/etc/samba/smb.conf>
-    * tried re-using IAQ code but it didn't work
-* <https://askubuntu.com/questions/258284/setting-up-an-anonymous-public-samba-share-to-be-accessed-via-windows-7-and-xbmc>
-    * this person gets prompted for user/pswd, but clears user from field and logins
-      successfully as anon user. they report server is *not* visible via file browser
-    * reported key to success was `security = share` (said `security=user`+`map to user=Bad User`
-      wasn't working for them)
-* <https://askubuntu.com/questions/781963/simple-samba-share-no-password?noredirect=1&lq=1>
-    * this user wants full read & write access not anon guest
-    * comment to top answer indicates key is `chmod 777 /share`
-    * top answer mentions resetting w/ `dpkg-reconfigure samba-common`
-* <https://www.raspberrypi.org/forums/viewtopic.php?p=1249692>
-    * forum user brings up Windows 10 intentionally disabling guest access (Jan 2018)
-      likely could have arrived in Windows 7?
-    * tried adding registry key ....\AllowInsecureGuestAuth and still didn't work
-* <https://raspberrypi.stackexchange.com/questions/15108/unable-to-access-samba-file-share>
-    * 2014, options referenced in smb.conf no longer exist in default setup
-* <https://stackoverflow.com/questions/17078414/samba-shares-seen-in-windows-but-cannot-connect>
-    * marked as answered (Jul 2013) key is `guest account = nfsnobody` and
-      `map to guest = bad user` in the global section
-* <https://www.debuntu.org/samba-how-to-share-files-for-your-lan-without-userpassword/>
-    * old tutorial using `security = share` ... I tried and was told `share` was invalid option
-* <https://ubuntuforums.org/showthread.php?t=1709425>
-    * another discussion about `security = user`+`map to guest = bad user` combo
-    * this didn't seem to change anything when tried
-* <https://serverfault.com/questions/895570/how-to-configure-samba-to-work-with-windows-10-1709>
-    * another user with Windows 10 problems, and answers with reference links
-    * hours-new post complains windows 7 clients impacted too
-
-
-### Nginx
+#### Nginx
 
 This web server will allow users to reach RPi-Monitor, a data website, and
 basic log file browsing via the same website.
@@ -237,7 +255,11 @@ sudo rm /etc/nginx/sites-enable/default
 sudo nano /etc/nginx/sites-available/ebam
 ```
 
-Copy provided configuration file:
+Copy provided configuration file, which publishes:
+* web root (`/var/www/html`) as `/`
+* RPi-Monitor (localhost:8888) as `/status`
+* data folder (`/home/ebam/data`) as `/data`
+* *eventually: AQI plot (bokeh server) as `/` instead*
 ```
 sudo cp src/etc/nginx/sites-available/ebam /etc/nginx/sites-available/ebam
 ```

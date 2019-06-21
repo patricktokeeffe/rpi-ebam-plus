@@ -20,10 +20,8 @@ server {
     # HINT withOUT trailing slash to get redirect from without
     location /data {
         disable_symlinks off;
-        alias /share;
+        root /home/ebam;
         autoindex on;
     }
 }
-
-
 
