@@ -87,11 +87,12 @@ sudo nano /boot/config.txt
 sudo reboot
 ```
 
-Then install *watchdog* and fix its broken *systemd* service file:
+Install the *watchdog* package:
+> *In latest releases, it is no longer necessary to fix the *systemd*
+> service file (Jun 2019).* 👍
 ```
 sudo apt install watchdog -y
-sudo bash -c "cp /lib/systemd/system/watchdog.service /etc/systemd/system/
-> echo 'WantedBy=multi-user.target' >> /etc/systemd/system/watchdog.service"
+```
 ```
 
 Update the configuration file:
@@ -133,18 +134,34 @@ Although of limited use inside the enclosure, a physical button is installed to 
 To monitor overall computer performance, install
 [RPi-Monitor](https://rpi-experiences.blogspot.com).
 
-1. [Install](https://xavierberger.github.io/RPi-Monitor-docs/11_installation.html)
-2. Update packages and enable update hook
-    * `sudo /etc/init.d/rpimonitor update`
-    * `sudo /etc/init.d/rpimonitor install_auto_package_status_update`
-3. Fix up network config (no longer active by default since introduction of
-   [predictable network names](https://www.freedesktop.org/wiki/Software/systemd/PredictableNetworkInterfaceNames/)
-    * `sudo nano /etc/rpimonitor/template/network.conf`
-    * Uncomment first two config blocks (optionally updating `eth0` if you have
-      enabled predictable names)
-    * Uncomment final config block for statistics
-    * Comment out existing status-content-line entries in third config block
-      and uncomment the "Ethernet sent..." line
+Follow [these instructions](https://xavierberger.github.io/RPi-Monitor-docs/11_installation.html).
+
+Update packages and enable update hook:
+```
+sudo /etc/init.d/rpimonitor update
+sudo /etc/init.d/rpimonitor install_auto_package_status_update
+```
+
+Fix up network config (no longer active by default since introduction of
+[predictable network names](https://www.freedesktop.org/wiki/Software/systemd/PredictableNetworkInterfaceNames/):
+* `sudo nano /etc/rpimonitor/template/network.conf`
+* Uncomment first two config blocks (optionally updating `eth0` if you have
+  enabled predictable names)
+* Uncomment final config block for statistics
+* Comment out existing status-content-line entries in third config block
+  and uncomment the "Ethernet sent..." line
+
+Set to listen on localhost only:
+```
+sudo nano /etc/rpimonitor/daemon.conf
+```
+```diff
+-#daemon.addr=0.0.0.0
++daemon.addr=127.0.0.1
+```
+```
+sudo systemctl restart rpimonitor
+```
 
 
 ### Data Access Setup
