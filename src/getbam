@@ -14,7 +14,7 @@ now=datetime.now()
 yesterday=now-timedelta(days=1)
 
 import os, os.path as osp
-logdir = '/var/log/ebam'
+logdir = '/var/log/ebam/daily'
 try:
     os.makedirs(logdir)
 except OSError:

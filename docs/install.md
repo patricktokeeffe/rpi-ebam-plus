@@ -147,6 +147,75 @@ To monitor overall computer performance, install
     * Comment out existing status-content-line entries in third config block
       and uncomment the "Ethernet sent..." line
 
+
+### Data Share Directory
+
+Create a new public directory that will be served via http/ftp/samba
+and populate with symlinks:
+```
+sudo mkdir -m 1777 /share
+```
+```
+sudo ln -s /var/run/ebam /var/log/ebam/latest
+sudo ln -s /var/log/ebam /share/ebam
+```
+
+By serving an `ebam` directory, we can easily expose other logfile
+sets later on (e.g. NTP stats or some environmental sensors).
+
+
+### SAMBA
+
+Install the *samba* package so Windows clients recognize the hostname, and
+users can anonymously browse from local network clients.
+```
+sudo apt install samba -y
+```
+```
+sudo cp src/etc/samba/smb.conf /etc/samba/
+```
+
+> **This isn't working for windows clients yet**
+
+Symptoms:
+* can see computer in network list
+* can open computer and see share
+* sometimes can even open share and see "ebam" folder
+* at no point can ebam folder be opened:
+    * "You do not have permission to access {shared folder name}"
+* frequently get (the same?) errors opening share home folder too
+
+Tab trail:
+* <https://github.com/wsular/rpi-python-iaq-sensor/blob/stash/etc/samba/smb.conf>
+    * tried re-using IAQ code but it didn't work
+* <https://askubuntu.com/questions/258284/setting-up-an-anonymous-public-samba-share-to-be-accessed-via-windows-7-and-xbmc>
+    * this person gets prompted for user/pswd, but clears user from field and logins
+      successfully as anon user. they report server is *not* visible via file browser
+    * reported key to success was `security = share` (said `security=user`+`map to user=Bad User`
+      wasn't working for them)
+* <https://askubuntu.com/questions/781963/simple-samba-share-no-password?noredirect=1&lq=1>
+    * this user wants full read & write access not anon guest
+    * comment to top answer indicates key is `chmod 777 /share`
+    * top answer mentions resetting w/ `dpkg-reconfigure samba-common`
+* <https://www.raspberrypi.org/forums/viewtopic.php?p=1249692>
+    * forum user brings up Windows 10 intentionally disabling guest access (Jan 2018)
+      likely could have arrived in Windows 7?
+    * tried adding registry key ....\AllowInsecureGuestAuth and still didn't work
+* <https://raspberrypi.stackexchange.com/questions/15108/unable-to-access-samba-file-share>
+    * 2014, options referenced in smb.conf no longer exist in default setup
+* <https://stackoverflow.com/questions/17078414/samba-shares-seen-in-windows-but-cannot-connect>
+    * marked as answered (Jul 2013) key is `guest account = nfsnobody` and
+      `map to guest = bad user` in the global section
+* <https://www.debuntu.org/samba-how-to-share-files-for-your-lan-without-userpassword/>
+    * old tutorial using `security = share` ... I tried and was told `share` was invalid option
+* <https://ubuntuforums.org/showthread.php?t=1709425>
+    * another discussion about `security = user`+`map to guest = bad user` combo
+    * this didn't seem to change anything when tried
+* <https://serverfault.com/questions/895570/how-to-configure-samba-to-work-with-windows-10-1709>
+    * another user with Windows 10 problems, and answers with reference links
+    * hours-new post complains windows 7 clients impacted too
+
+
 ### Nginx
 
 This web server will allow users to reach RPi-Monitor, a data website, and
@@ -168,34 +237,9 @@ sudo rm /etc/nginx/sites-enable/default
 sudo nano /etc/nginx/sites-available/ebam
 ```
 
-This is a combination of the default site + docs example:
+Copy provided configuration file:
 ```
-server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
-
-    root /var/www/html;
-
-    index index.html index.htm;
-
-    server_name _;
-
-    location / {
-        try_files $uri $uri/ =404;
-    }
-
-    # HINT with trailing slash to get redirect from without
-    location /status/ {
-        proxy_pass http://localhost:8888;
-    }
-
-    # HINT withOUT trailing slash to get redirect from without
-    location /data {
-        disable_symlinks off;
-        alias /var/log/ebam/;
-        autoindex on;
-    }
-}
+sudo cp src/etc/nginx/sites-available/ebam /etc/nginx/sites-available/ebam
 ```
 
 Enable the new site and restart *nginx*:
