@@ -1,4 +1,3 @@
-
 # Software Installation
 
 ## E-BAM PLUS Raspberry Pi Interface
@@ -88,11 +87,12 @@ sudo nano /boot/config.txt
 sudo reboot
 ```
 
-Then install *watchdog* and fix its broken *systemd* service file:
+Install the *watchdog* package:
+> *In latest releases, it is no longer necessary to fix the *systemd*
+> service file (Jun 2019).* 👍
 ```
 sudo apt install watchdog -y
-sudo bash -c "cp /lib/systemd/system/watchdog.service /etc/systemd/system/
-> echo 'WantedBy=multi-user.target' >> /etc/systemd/system/watchdog.service"
+```
 ```
 
 Update the configuration file:
@@ -134,18 +134,158 @@ Although of limited use inside the enclosure, a physical button is installed to 
 To monitor overall computer performance, install
 [RPi-Monitor](https://rpi-experiences.blogspot.com).
 
-1. [Install](https://xavierberger.github.io/RPi-Monitor-docs/11_installation.html)
-2. Update packages and enable update hook
-    * `sudo /etc/init.d/rpimonitor update`
-    * `sudo /etc/init.d/rpimonitor install_auto_package_status_update`
-3. Fix up network config (no longer active by default since introduction of
-   [predictable network names](https://www.freedesktop.org/wiki/Software/systemd/PredictableNetworkInterfaceNames/)
-    * `sudo nano /etc/rpimonitor/template/network.conf`
-    * Uncomment first two config blocks (optionally updating `eth0` if you have
-      enabled predictable names)
-    * Uncomment final config block for statistics
-    * Comment out existing status-content-line entries in third config block
-      and uncomment the "Ethernet sent..." line
+Follow [these instructions](https://xavierberger.github.io/RPi-Monitor-docs/11_installation.html).
+
+Update packages and enable update hook:
+```
+sudo /etc/init.d/rpimonitor update
+sudo /etc/init.d/rpimonitor install_auto_package_status_update
+```
+
+Fix up network config (no longer active by default since introduction of
+[predictable network names](https://www.freedesktop.org/wiki/Software/systemd/PredictableNetworkInterfaceNames/):
+* `sudo nano /etc/rpimonitor/template/network.conf`
+* Uncomment first two config blocks (optionally updating `eth0` if you have
+  enabled predictable names)
+* Uncomment final config block for statistics
+* Comment out existing status-content-line entries in third config block
+  and uncomment the "Ethernet sent..." line
+
+Set to listen on localhost only:
+```
+sudo nano /etc/rpimonitor/daemon.conf
+```
+```diff
+-#daemon.addr=0.0.0.0
++daemon.addr=127.0.0.1
+```
+```
+sudo systemctl restart rpimonitor
+```
+
+
+### Data Access Setup
+
+#### FTP
+
+Install an FTP server for universal copy-paste access
+(default configuration works okay):
+```
+sudo apt install vsftpd -y
+```
+
+Create new user *ebam* for FTP login (only, no shell access):
+```
+sudo adduser -s /bin/false ebam
+sudo nano /etc/shells
+```
+```diff
+ ...
++/bin/false
+```
+
+Create new directory to hold shared folders (& reset ownership):
+```
+sudo mkdir /home/ebam/data
+sudo chown -R ebam:ebam /home/ebam/data
+```
+
+Retrict ftp login to *ebam* by blacklisting other users (ex: *pi*):
+```
+sudo nano /etc/ftpusers
+```
+```diff
+ ...
++pi
+```
+
+> **Notes on *vsftpd***
+>
+> * trying to setup anon browse access
+>     * throws writeable root chroot errors
+>     * anon cannot follow symlinks
+> * seting up user based access
+>     * chrome does not permit login FTP browse
+>     * chroot'ed users cannot follow symlinks
+>     * chroot'ed users must have read-only home dir
+>     * non-chroot users can browse/get lost in file system
+> * using bind vs symlinks
+>     * nobody can see into nested `mount --bind` folders
+>     * the `mount --bind` command isn't persistant anyway
+>     * windows explorer FTP cannot symlink or bind (sometimes?)
+>     * <https://serverfault.com/questions/972337/vsftp-accessing-nested-mounted-folders>
+
+
+#### Data Share Folder
+
+Symlink the runtime folder with latest values into the EBAM log
+directory, then symlink the EBAM log directory into the FTP homedir:
+```
+sudo ln -s /run/ebam /var/log/ebam/latest
+sudo ln -s /var/log/ebam /home/ebam/data
+```
+
+This folder (`/home/ebam/data`) will be the base directory (`/`) 
+for HTTP/S browsing (`/data/`) and the SAMBA share ("Data") (see below).
+Since the FTP user is not chroot'ed, make another symlink to provide
+the same short path structure (i.e. `ftp://<hostname>/data/ebam/...`):
+```
+sudo ln -s /home/ebam/data /data
+```
+
+
+#### Windows Shares
+
+Install the *samba* package so Windows clients recognize the hostname and
+browse the computer anonymously from the local network.
+```
+sudo apt install samba -y
+```
+
+Then copy the provided configuration, which will create a public, read-only
+share named "data" which maps to `/home/ebam/data`:
+```
+sudo mv /etc/samba/smb.conf /etc/samba/smb.conf.bak
+sudo cp src/etc/samba/smb.conf /etc/samba/
+sudo systemctl restart smbd
+```
+
+
+#### Nginx
+
+This web server will allow users to reach RPi-Monitor, a data website, and
+basic log file browsing via the same website.
+
+> *Note we are not using secure HTTP because this device does not have a DNS entry
+> and self-signed certificates offer no real advantage (i.e. our server is read-only).
+
+Refer to the *Usages* > *Authentication and secure access* section of the
+documentation (<https://xavierberger.github.io/RPi-Monitor-docs/34_autentication.html>)
+for examples.
+
+Install *nginx*, disable the default site and create a new one:
+```
+sudo apt install nginx -y
+```
+```
+sudo rm /etc/nginx/sites-enable/default
+sudo nano /etc/nginx/sites-available/ebam
+```
+
+Copy provided configuration file, which publishes:
+* web root (`/var/www/html`) as `/`
+* RPi-Monitor (localhost:8888) as `/status`
+* data folder (`/home/ebam/data`) as `/data`
+* *eventually: AQI plot (bokeh server) as `/` instead*
+```
+sudo cp src/etc/nginx/sites-available/ebam /etc/nginx/sites-available/ebam
+```
+
+Enable the new site and restart *nginx*:
+```
+sudo ln -s /etc/nginx/sites-available/ebam /etc/nginx/sites-enabled/ebam
+sudo systemctl restart nginx
+```
 
 
 ### Development Setup
