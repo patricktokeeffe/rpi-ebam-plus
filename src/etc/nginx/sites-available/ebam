@@ -22,6 +22,7 @@ server {
         disable_symlinks off;
         root /home/ebam;
         autoindex on;
+        default_type text/plain;
     }
 }
 
