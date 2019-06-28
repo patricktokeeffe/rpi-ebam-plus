@@ -300,14 +300,16 @@ sudo pip install python-dev pyserial pandas
 > able to load them - therefore, do not omit `sudo` when calling `pip`.*
 
 
-### Data Acquisition Script
+### Data Acquisition Scripts
 
-The script needs to be run each hour; it is not a continuous process at this time.
-Just use `sudo crontab -e` (or your favorite method) to run 5 mins past the hour:
+Finally, copy the source files to corresponding system directories:
 ```
-5 * * * * /path/to/the/repo/src/getbam
+git clone https://github.com/patricktokeeffe/rpi-ebam-plus
+ ...
+cd rpi-ebam-plus
+sudo cp src/ /
 ```
 
-
-
+Because a `cron.d/` service file is included, copying the source files is
+sufficient to initiate automatic data acquisition from the E-BAM PLUS.
 

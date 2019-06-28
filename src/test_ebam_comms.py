@@ -22,7 +22,7 @@ class EbamPlus:
         """
         self.port = port
         ####connects automatically
-        self.cli = serial.Serial(self.port, timeout=5.0)
+        self.cli = serial.Serial(self.port, timeout=1.0)
         ### future: automatically populate w/ EBAM unit data
 
     def __enter__(self):
@@ -146,14 +146,15 @@ class EbamPlus:
             *ts* for data since timestamp where *ts* has format
             `yyyy-MM-dd HH:mm:ss`.
         """
-        if param1 == 0:
-            raise NotImplementedError("Sorry, serial port not recommended for all data")
-            # see `report_all_data()` above
-        elif param1 is not None:
+        if param1 is not None:
             cmd = '4 {}'.format(param1)
+            # TODO? trim extra trailing commas? (not present in usb data reports)
         else:
             cmd = '4'
-        return self.comp_command(cmd)
+        resp = self.comp_command(cmd)
+        if param1 is None:
+            resp = resp.rstrip(',\n') #remove trailing from single-line responses
+        return resp
 
     def report_alarms(self):
         """Return all alarm events"""
@@ -233,7 +234,7 @@ class EbamPlus:
 
     def report_data_header(self):
         """Report data record header"""
-        return self.comp_command('QH')
+        return self.comp_command('QH').rstrip(',\n') #fix to match data report
 
     def last_record(self):
         """Request the instantaneous measurement record"""
@@ -297,17 +298,44 @@ class EbamPlus:
     ## skip clock sync mode (CLKSYNC)
 
 
-### Method 1
-"""
-with EbamPlus('/dev/ttyUSB0') as ebam:
-    print('Requesting settings report...')
-    print(ebam.report_settings())
-"""
 
-### method 2
+if __name__=='__main__':
 
-ebam = EbamPlus('/dev/ttyUSB0') # connects automatically
+    import os, os.path as osp
+    import time
 
-print('Requesting latest data...')
-print(ebam.report_last_data(4))
+    realtimedir = '/var/run/ebam'
+    try:
+        os.makedirs(realtimedir)
+    except OSError:
+        if not osp.isdir(realtimedir):
+            raise
 
+    with EbamPlus('/dev/ttyUSB0') as ebam:
+        singlevars = {'Settings_Report' : ebam.report_settings,
+                      'Alarm_Report'    : ebam.report_alarms,
+                      'SS'              : ebam.serial_number,
+                      'ID'              : ebam.location,
+                      'RTPER'           : ebam.realtime_period,
+                      'BKGD'            : ebam.background_offset,
+                      'SPAN'            : ebam.span_value,
+                      'FTSP'            : ebam.filter_tmpr_setpoint,
+                      'TZO'             : ebam.timezone_offset,
+                      'Op_State'        : ebam.op_state
+                      }
+        for (fn,cmd) in singlevars.items():
+            resp = cmd()
+            with open(osp.join(realtimedir, fn), mode='w') as f:
+                f.write(resp)
+            time.sleep(0.5)
+
+        columns = ebam.report_data_header()
+        vars = [c.split('(')[0] for c in columns.split(',')] #remove units
+        last_record = ebam.report_last_data()
+        for (var, val) in zip(vars, last_record.split(',')):
+            try:
+                val = float(val) # ie write 0.0 not 00000 or 24.1 not +024.1
+            except ValueError:
+                pass
+            with open(osp.join(realtimedir, var), mode='w') as f:
+                f.write(str(val))

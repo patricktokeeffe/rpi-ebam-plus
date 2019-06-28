@@ -1,0 +1,10 @@
+# ensure runtime directories exist for scripts
+@reboot root mkdir -p /var/run/ebam
+
+# retrieve new data
+1 * * * * root /home/lar/ebam-plus/src/getbam >> /home/lar/ebam-plus/src/getbam.log
+
+# populate RPi Monitor status page
+# but don't collide with existing data script
+0,2-59 * * * * root python /home/lar/ebam-plus/src/test_ebam_comms.py
+
