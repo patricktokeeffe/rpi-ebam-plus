@@ -87,7 +87,7 @@ class EbamPlus:
                 recvd = int(parts[1])
                 calcd = self.calc_checksum(parts[0])
                 if recvd != calcd:
-                    warnings.warn("EbamPlus.eval_checksum: validation failed ({}): ".format(calcd), line)
+                    warnings.warn("EbamPlus.eval_checksum: validation failed ({}): {}".format(calcd, line))
                 copy += parts[0]+'\n'
         return copy
 
