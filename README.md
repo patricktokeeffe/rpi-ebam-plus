@@ -32,4 +32,7 @@ Browse & download historical data files:
 
 ### License
 
+Certain files within `src/var/www/html/resources/` are available under the
+Creative Commons Attribution 4.0 International License. 
+
 This work licensed under [The MIT License](http://opensource.org/licenses/mit-license.html).
