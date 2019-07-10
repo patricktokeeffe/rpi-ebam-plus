@@ -164,6 +164,29 @@ sudo systemctl restart rpimonitor
 ```
 
 
+### Resources Folder
+
+In preparation for next section, manually download third-party
+files into resources folder (skipping if present & not updated):
+```
+wget -N -P src/var/www/html/resources https://metone.com/wp-content/uploads/2019/05/E-BAM-PLUS-9800-Manual-Rev-C.pdf
+wget -N -P src/var/www/html/resources https://metone.com/wp-content/uploads/2019/05/597A-9800-Manual-Rev-A.pdf
+wget -N -P src/var/www/html/resources https://metone.com/wp-content/uploads/2019/04/BX-302-9800-Rev-F.pdf
+#wget -N -P src/var/www/html/resources   ...BX-305 Inlet adapter manual, not available
+wget -N -P src/var/www/html/resources https://metone.com/wp-content/uploads/2019/04/BX-344-9800-Rev-C.pdf
+#wget -N -P src/var/www/html/resources   ...BX-802 PM10 Inlet manual, not available
+wget -N -P src/var/www/html/resources https://metone.com/wp-content/uploads/2019/05/BX-808-9800-Rev-C.pdf
+wget -N -P src/var/www/html/resources https://metone.com/wp-content/uploads/2019/04/met_one_beta_source_data_sheet.pdf
+wget -N -P src/var/www/html/resources https://metone.com/wp-content/uploads/2019/04/Service-E-BAM-Plus.pdf
+```
+
+Then copy all resource files to a place users can download from:
+```
+sudo mkdir -p /var/www/html/resources
+sudo cp src/var/www/html/resources/* /var/www/html/resources
+```
+
+
 ### Data Access Setup
 
 #### FTP
