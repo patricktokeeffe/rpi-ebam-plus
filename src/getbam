@@ -10,6 +10,14 @@ from datetime import datetime, timedelta
 from ebam_getdata import getEbamLastHour
 import pandas as pd
 
+## give the EBAM 5 seconds to generate dataset
+## typically, tape alarms occur at :07 seconds,
+## so 5sec should be plenty. want to be ahead
+## of RPi-Monitor sample at :10
+import time
+time.sleep(20) #### HACK 5->20 to account for 10s lag of EBAM
+
+
 now=datetime.now()
 yesterday=now-timedelta(days=1)
 
